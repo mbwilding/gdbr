@@ -68,6 +68,12 @@ impl UiManager {
                     }
                 });
 
+                ui.menu_button("Windows", |ui| {
+                    if ui.button("Reset Layout").clicked() {
+                        self.dock_state = Self::setup_dock_layout();
+                    }
+                });
+
                 ui.menu_button("Settings", |ui| {
                     ui.menu_button("Visuals", |ui| {
                         ui.menu_button("Themes", |ui| {
@@ -106,11 +112,11 @@ impl UiManager {
         let surface = dock_state.main_surface_mut();
 
         let [center, bottom_left] =
-            surface.split_below(egui_dock::NodeIndex::root(), 0.666, vec![Tab::Console]);
+            surface.split_below(egui_dock::NodeIndex::root(), 0.6666666, vec![Tab::Console]);
 
         let [_, _bottom_right] = surface.split_right(
             bottom_left,
-            0.666,
+            0.6666666,
             vec![Tab::Watch, Tab::Locals, Tab::Registers, Tab::Data],
         );
 
