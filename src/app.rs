@@ -137,6 +137,10 @@ impl eframe::App for Gdbr {
                     .min_width(100.0)
                     .show_inside(ui, |ui| {
                         ui.centered_and_justified(|ui| {
+                            // ui.horizontal(|ui| {
+                            //     ui.selectable_value(lorem_ipsum, true, "Watch");
+                            //     ui.selectable_value(lorem_ipsum, false, "La Pasionaria");
+                            // });
                             ui.heading("Watch | Locals | Registers | Data")
                         })
                     });
