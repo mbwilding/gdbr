@@ -16,7 +16,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        gdbr::app::NAME,
+        gdbr::NAME,
         native_options,
         Box::new(|cc| Ok(Box::new(gdbr::Gdbr::new(cc)))),
     )
