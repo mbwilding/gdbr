@@ -1,13 +1,27 @@
-use egui::{CentralPanel, Color32, MenuBar, TopBottomPanel};
+use egui::{CentralPanel, Color32, MenuBar, ScrollArea, TextEdit, ThemePreference, TopBottomPanel};
 use egui::{Frame, SidePanel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 pub const NAME: &'static str = "gdbr";
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
-pub struct Gdbr {}
+pub struct Gdbr {
+    #[serde(skip)]
+    logs: String, // TODO: Vec
+    #[serde(skip)]
+    console_input: String,
+}
+
+impl Default for Gdbr {
+    fn default() -> Self {
+        Self {
+            logs: "Logs...\nMore logs...\nSome other log...\nNew log...\nAnother log".into(),
+            console_input: String::new(),
+        }
+    }
+}
 
 impl Gdbr {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
@@ -59,29 +73,61 @@ impl eframe::App for Gdbr {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Top bar
         TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
-                let is_web = cfg!(target_arch = "wasm32");
-                if !is_web {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                ui.menu_button("File", |ui| {
+                    if ui.button("Quit").clicked() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                });
+
+                ui.menu_button("Settings", |ui| {
+                    ui.menu_button("Themes", |ui| {
+                        if ui.button("System").clicked() {
+                            ctx.set_theme(ThemePreference::System);
+                        }
+                        if ui.button("Dark").clicked() {
+                            ctx.set_theme(ThemePreference::Dark);
+                        }
+                        if ui.button("Light").clicked() {
+                            ctx.set_theme(ThemePreference::Light);
                         }
                     });
-                    ui.add_space(16.0);
-                }
+                });
 
-                egui::widgets::global_theme_preference_buttons(ui);
+                // ui.add_space(16.0);
             });
         });
 
         TopBottomPanel::bottom("bottom")
             .resizable(true)
-            .default_height(400.0)
+            .default_height(350.0)
             .min_height(100.0)
             .show(ctx, |ui| {
-                ui.centered_and_justified(|ui| ui.heading("Bottom"))
+                SidePanel::right("right2")
+                    .resizable(true)
+                    .default_width(650.0)
+                    .min_width(100.0)
+                    .show_inside(ui, |ui| {
+                        ui.centered_and_justified(|ui| {
+                            ui.heading("Watch | Locals | Registers | Data")
+                        })
+                    });
+
+                ScrollArea::new([true, true])
+                    .auto_shrink(false)
+                    .show(ui, |ui| {
+                        ui.add_sized(ui.available_size(), TextEdit::multiline(&mut self.logs));
+                    });
+
+                // ui.label("Console")
+
+                // ui.centered_and_justified(|ui| ui.label("Console"));
+                // // ui.text_edit_multiline(&mut self.logs);
+                //
+                // ui.horizontal(|ui| {
+                //     ui.text_edit_singleline(&mut self.console_input);
+                // });
             });
 
         SidePanel::right("right")
