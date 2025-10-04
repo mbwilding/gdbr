@@ -123,7 +123,6 @@ impl TabViewer for Tabs {
             }
             Tab::Console => {
                 ui.vertical(|ui| {
-                    // Logs area at the top - takes remaining space
                     ui.allocate_ui_with_layout(
                         egui::Vec2::new(ui.available_width(), ui.available_height() - 30.0), // Reserve space for input
                         egui::Layout::top_down(egui::Align::default()),
@@ -144,7 +143,6 @@ impl TabViewer for Tabs {
 
                     ui.separator();
 
-                    // Command input at the bottom - fixed height
                     ui.horizontal(|ui| {
                         ui.label("Command");
                         ui.add_sized(

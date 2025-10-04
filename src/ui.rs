@@ -30,10 +30,7 @@ impl Default for UiManager {
 impl UiManager {
     pub fn setup_theme(&self, ctx: &egui::Context) {
         ctx.set_visuals(egui::Visuals {
-            dark_mode: true,
-            override_text_color: Some(Color32::WHITE),
             panel_fill: Color32::BLACK,
-            button_frame: true,
             ..Default::default()
         });
     }
