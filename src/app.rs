@@ -1,23 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config::AppConfig;
+use crate::config::Config;
 use crate::ui::UiManager;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Gdbr {
-    config: AppConfig,
-    #[serde(skip)]
-    ui_manager: Option<UiManager>,
-}
-
-impl Default for Gdbr {
-    fn default() -> Self {
-        Self {
-            config: AppConfig::default(),
-            ui_manager: None,
-        }
-    }
+    config: Config,
+    ui: UiManager,
 }
 
 impl Gdbr {
@@ -29,18 +19,11 @@ impl Gdbr {
         };
 
         // Setup temps
-        app.config.zoom_temp = app.config.zoom;
+        app.ui.zoom_temp = app.ui.zoom;
 
-        // Initialize dock state if it wasn't loaded from storage
-        if app.ui_manager.is_none() {
-            app.ui_manager = Some(UiManager::new(app.config.clone()));
-        }
-
-        // Setup theme and fonts
-        if let Some(ref ui_manager) = app.ui_manager {
-            ui_manager.setup_theme(&cc.egui_ctx);
-            ui_manager.setup_fonts(&cc.egui_ctx);
-        }
+        // Setup UI
+        app.ui.setup_theme(&cc.egui_ctx);
+        app.ui.setup_fonts(&cc.egui_ctx);
 
         app
     }
@@ -52,11 +35,9 @@ impl eframe::App for Gdbr {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.set_zoom_factor(self.config.zoom);
+        ctx.set_zoom_factor(self.ui.zoom);
 
-        if let Some(ref mut ui_manager) = self.ui_manager {
-            ui_manager.show_menu_bar(ctx);
-            ui_manager.show_dock_area(ctx);
-        }
+        self.ui.show_menu_bar(ctx);
+        self.ui.show_dock_area(ctx);
     }
 }

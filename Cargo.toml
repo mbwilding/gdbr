@@ -22,7 +22,7 @@ eframe = { version = "0.32.3", default-features = false, features = [
     "x11",           # To support older Linux distributions (restores one of the default features)
 ] }
 egui = "0.32.3"
-egui_dock = "0.17.0"
+egui_dock = { version = "0.17.0", features = ["serde"] }
 log = "0.4.28"
 serde = { version = "1.0.228", features = ["derive"] }
 

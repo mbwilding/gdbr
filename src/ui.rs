@@ -1,25 +1,34 @@
 use egui::{Color32, MenuBar, Slider, ThemePreference, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::config::AppConfig;
+use crate::config::Config;
 use crate::tabs::{Tab, Tabs};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UiManager {
-    config: AppConfig,
+    config: Config,
     dock_state: DockState<Tab>,
+
+    pub zoom: f32,
+    #[serde(skip)]
+    pub zoom_temp: f32,
+}
+
+impl Default for UiManager {
+    fn default() -> Self {
+        Self {
+            config: Default::default(),
+            dock_state: Self::setup_dock_layout(),
+
+            zoom: 1.0,
+            zoom_temp: 1.0,
+        }
+    }
 }
 
 impl UiManager {
-    pub fn new(config: AppConfig) -> Self {
-        let initial_tabs = vec![Tab::Content];
-        Self {
-            config,
-            dock_state: DockState::new(initial_tabs),
-        }
-    }
-
     pub fn setup_theme(&self, ctx: &egui::Context) {
         ctx.set_visuals(egui::Visuals {
             dark_mode: true,
@@ -74,9 +83,9 @@ impl UiManager {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Zoom ");
-                            ui.add(Slider::new(&mut self.config.zoom_temp, 0.5..=3.0));
+                            ui.add(Slider::new(&mut self.zoom_temp, 0.5..=3.0));
                             if ui.button("Apply").clicked() {
-                                self.config.zoom = self.config.zoom_temp;
+                                self.zoom = self.zoom_temp;
                             }
                         });
                     });
@@ -86,46 +95,37 @@ impl UiManager {
     }
 
     pub fn show_dock_area(&mut self, ctx: &egui::Context) {
-        self.setup_dock_layout();
-
         let mut tab_viewer = Tabs;
         DockArea::new(&mut self.dock_state)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut tab_viewer);
     }
 
-    fn setup_dock_layout(&mut self) {
-        if !self.config.layout_initialized {
-            let surface = self.dock_state.main_surface_mut();
+    fn setup_dock_layout() -> DockState<Tab> {
+        let mut dock_state = DockState::<Tab>::new(vec![Tab::Content]);
+        let surface = dock_state.main_surface_mut();
 
-            // Create a proper split layout:
-            // 1. Split horizontally: left (debug area) and right (content)
-            let content_tabs = vec![Tab::Content];
-            let [_left, right_node] =
-                surface.split_right(egui_dock::NodeIndex::root(), 0.4, content_tabs);
+        let [center, bottom_left] =
+            surface.split_below(egui_dock::NodeIndex::root(), 0.666, vec![Tab::Console]);
 
-            // 2. Split the left side vertically: top (debug tabs) and bottom (console)
-            let debug_tabs = vec![Tab::Locals, Tab::Registers, Tab::Data];
-            let [_top, bottom_node] =
-                surface.split_below(egui_dock::NodeIndex::root(), 0.7, debug_tabs);
+        let [_, _bottom_right] = surface.split_right(
+            bottom_left,
+            0.666,
+            vec![Tab::Watch, Tab::Locals, Tab::Registers, Tab::Data],
+        );
 
-            // 3. Add console at the bottom
-            let console_tabs = vec![Tab::Console];
-            surface.split_below(bottom_node, 0.3, console_tabs);
+        let [_, right_top] = surface.split_right(
+            center,
+            0.8,
+            vec![Tab::Exe, Tab::Breakpoints, Tab::Commands, Tab::Struct],
+        );
 
-            // 4. Add additional tabs to the right side
-            let additional_tabs = vec![Tab::Exe, Tab::Breakpoints, Tab::Commands, Tab::Struct];
-            surface.split_below(right_node, 0.5, additional_tabs);
+        let [_, _right_bottom] = surface.split_below(
+            right_top,
+            0.5,
+            vec![Tab::Stack, Tab::Files, Tab::Thread, Tab::CmdSearch],
+        );
 
-            self.config.layout_initialized = true;
-        }
-    }
-
-    pub fn get_config(&self) -> &AppConfig {
-        &self.config
-    }
-
-    pub fn get_config_mut(&mut self) -> &mut AppConfig {
-        &mut self.config
+        dock_state
     }
 }

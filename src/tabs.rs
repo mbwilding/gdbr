@@ -11,6 +11,10 @@ pub enum Tab {
     Breakpoints,
     Commands,
     Struct,
+    Stack,
+    Files,
+    Thread,
+    CmdSearch,
     Watch,
     Locals,
     Registers,
@@ -26,6 +30,10 @@ impl Tab {
             Self::Breakpoints => "Breakpoints",
             Self::Commands => "Commands",
             Self::Struct => "Struct",
+            Self::Stack => "Stack",
+            Self::Files => "Files",
+            Self::Thread => "Thread",
+            Self::CmdSearch => "CmdSearch",
             Self::Watch => "Watch",
             Self::Locals => "Locals",
             Self::Registers => "Registers",
@@ -83,6 +91,18 @@ impl TabViewer for Tabs {
             }
             Tab::Struct => {
                 ui.centered_and_justified(|ui| ui.heading("Struct"));
+            }
+            Tab::Stack => {
+                ui.centered_and_justified(|ui| ui.heading("Stack"));
+            }
+            Tab::Files => {
+                ui.centered_and_justified(|ui| ui.heading("Files"));
+            }
+            Tab::Thread => {
+                ui.centered_and_justified(|ui| ui.heading("Thread"));
+            }
+            Tab::CmdSearch => {
+                ui.centered_and_justified(|ui| ui.heading("CmdSearch"));
             }
             Tab::Watch => {
                 ui.centered_and_justified(|ui| ui.heading("Watch"));
