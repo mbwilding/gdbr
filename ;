@@ -1,5 +1,5 @@
 use crate::tabs::{Tab, Tabs};
-use egui::{Color32, MenuBar, RichText, TopBottomPanel};
+use egui::{Color32, MenuBar, RichText, Slider, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -110,17 +110,17 @@ impl UiManager {
 
                     egui::widgets::global_theme_preference_switch(ui);
 
-                    let zoom_response = ui.add(
-                        egui::DragValue::new(&mut self.zoom_temp)
-                            .update_while_editing(false)
-                            .speed(0.1)
-                            .range(1.0..=3.0)
-                            .prefix("Zoom: "),
-                    );
-
-                    if zoom_response.lost_focus() || zoom_response.drag_stopped() {
+                    if ui.button("Apply").clicked() {
                         self.zoom = self.zoom_temp;
                     }
+
+                    ui.add(
+                        egui::DragValue::new(&mut self.zoom)
+                            .update_while_editing(true)
+                            .speed(0.1)
+                            .range(0.5..=2.0)
+                            .prefix("Zoom: "),
+                    );
                 });
             });
         });
