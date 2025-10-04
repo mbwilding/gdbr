@@ -1,6 +1,12 @@
-use egui::{ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
+use egui::{Ui, WidgetText};
 use egui_dock::TabViewer;
 use serde::{Deserialize, Serialize};
+
+// Trait for tab implementations
+pub trait TabImpl {
+    fn title(&self) -> &'static str;
+    fn ui(&mut self, ui: &mut Ui, app: &mut crate::app::Gdbr);
+}
 
 // Tab types for the dock interface
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -42,12 +48,9 @@ impl Tab {
     }
 }
 
+// Main tabs container - now stateless
 #[derive(Debug, Default)]
-pub struct Tabs {
-    console_input: String,
-    console_input_prev: String,
-    logs: String,
-}
+pub struct Tabs;
 
 impl TabViewer for Tabs {
     type Tab = Tab;
@@ -62,53 +65,7 @@ impl TabViewer for Tabs {
                 ui.centered_and_justified(|ui| ui.heading("Content"));
             }
             Tab::Console => {
-                ui.vertical(|ui| {
-                    ui.allocate_ui_with_layout(
-                        egui::Vec2::new(ui.available_width(), ui.available_height() - 30.0),
-                        egui::Layout::top_down(egui::Align::default()),
-                        |ui| {
-                            ScrollArea::new([true, true])
-                                .auto_shrink(false)
-                                .show(ui, |ui| {
-                                    ui.add_sized(
-                                        ui.available_size(),
-                                        TextEdit::multiline(&mut self.logs)
-                                            .font(TextStyle::Monospace)
-                                            .interactive(false)
-                                            .frame(false),
-                                    );
-                                });
-                        },
-                    );
-
-                    ui.separator();
-
-                    ui.horizontal(|ui| {
-                        ui.label("Command");
-                        let response = ui.add_sized(
-                            ui.available_size(),
-                            TextEdit::singleline(&mut self.console_input)
-                                .font(TextStyle::Monospace),
-                        );
-
-                        if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                            response.request_focus();
-                            if self.console_input.is_empty() {
-                                // TODO: enter = repeat last
-                                self.logs.push_str(&self.console_input_prev);
-                                self.logs.push('\n');
-                            } else {
-                                // TODO: post to gdb instead
-                                self.logs.push_str(&self.console_input);
-                                self.logs.push('\n');
-                                if self.console_input_prev != self.console_input {
-                                    self.console_input_prev = self.console_input.clone();
-                                }
-                                self.console_input.clear();
-                            }
-                        };
-                    });
-                });
+                ui.centered_and_justified(|ui| ui.heading("Console"));
             }
             Tab::Exe => {
                 ui.centered_and_justified(|ui| ui.heading("Exe"));
@@ -149,3 +106,19 @@ impl TabViewer for Tabs {
         }
     }
 }
+
+// Export individual tab modules
+pub mod content;
+pub mod console;
+pub mod exe;
+pub mod breakpoints;
+pub mod commands;
+pub mod struct_tab;
+pub mod stack;
+pub mod files;
+pub mod thread;
+pub mod cmd_search;
+pub mod watch;
+pub mod locals;
+pub mod registers;
+pub mod data;
