@@ -69,6 +69,34 @@ impl UiManager {
                 });
 
                 ui.menu_button("Windows", |ui| {
+                    let tabs = [
+                        Tab::Content,
+                        Tab::Console,
+                        Tab::Exe,
+                        Tab::Breakpoints,
+                        Tab::Commands,
+                        Tab::Struct,
+                        Tab::Stack,
+                        Tab::Files,
+                        Tab::Thread,
+                        Tab::CmdSearch,
+                        Tab::Watch,
+                        Tab::Locals,
+                        Tab::Registers,
+                        Tab::Data,
+                    ];
+
+                    for tab in tabs {
+                        let is_visible = self.is_tab_visible(&tab);
+                        let mut visible = is_visible;
+
+                        if ui.checkbox(&mut visible, tab.title()).clicked() {
+                            self.set_tab_visible(tab, visible);
+                        }
+                    }
+
+                    ui.separator();
+
                     if ui.button("Reset Layout").clicked() {
                         self.dock_state = Self::setup_dock_layout();
                     }
@@ -105,6 +133,31 @@ impl UiManager {
         DockArea::new(&mut self.dock_state)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut tab_viewer);
+    }
+
+    pub fn is_tab_visible(&self, tab: &Tab) -> bool {
+        self.dock_state.iter_all_tabs().any(|(_, t)| t == tab)
+    }
+
+    pub fn toggle_tab(&mut self, tab: Tab) {
+        if self.is_tab_visible(&tab) {
+            if let Some((surface, node, tab_index)) = self.dock_state.find_tab(&tab) {
+                self.dock_state.remove_tab((surface, node, tab_index));
+            }
+        } else {
+            self.dock_state.push_to_focused_leaf(tab);
+        }
+    }
+
+    pub fn set_tab_visible(&mut self, tab: Tab, visible: bool) {
+        if visible && !self.is_tab_visible(&tab) {
+            self.dock_state.push_to_focused_leaf(tab);
+        } else if !visible
+            && self.is_tab_visible(&tab)
+            && let Some((surface, node, tab_index)) = self.dock_state.find_tab(&tab)
+        {
+            self.dock_state.remove_tab((surface, node, tab_index));
+        }
     }
 
     fn setup_dock_layout() -> DockState<Tab> {
