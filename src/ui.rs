@@ -2,7 +2,10 @@ use crate::tabs::{Tab, Tabs};
 use egui::{Color32, MenuBar, RichText, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UiManager {
@@ -11,9 +14,11 @@ pub struct UiManager {
     tabs: Tabs,
 
     #[serde(skip)]
-    picked_path: Option<PathBuf>,
+    picked_file: Option<PathBuf>,
     #[serde(skip)]
     picked_path_file_name: String,
+    #[serde(skip)]
+    picked_path_full_path: String,
 
     pub zoom: f32,
     #[serde(skip)]
@@ -26,8 +31,9 @@ impl Default for UiManager {
             dock_state: Self::setup_dock_layout(),
             tabs: Tabs::default(),
 
-            picked_path: None,
+            picked_file: None,
             picked_path_file_name: String::new(),
+            picked_path_full_path: String::new(),
 
             zoom: 1.0,
             zoom_temp: 1.0,
@@ -70,10 +76,7 @@ impl UiManager {
                     if ui.button("Open").clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_file()
                     {
-                        self.picked_path = Some(path.clone());
-                        if let Some(file_name) = &path.file_name() {
-                            self.picked_path_file_name = file_name.display().to_string();
-                        }
+                        self.set_file_details(&path);
                     }
 
                     if ui.button("Quit").clicked() {
@@ -115,9 +118,12 @@ impl UiManager {
                     }
                 });
 
-                ui.centered_and_justified(|ui| {
-                    ui.monospace(&self.picked_path_file_name);
-                });
+                if self.picked_file.is_some() {
+                    ui.centered_and_justified(|ui| {
+                        ui.label(&self.picked_path_file_name)
+                            .on_hover_text(&self.picked_path_full_path);
+                    });
+                }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if cfg!(debug_assertions) {
@@ -152,12 +158,17 @@ impl UiManager {
             if let Some(file) = i.raw.dropped_files.first()
                 && let Some(path) = &file.path
             {
-                self.picked_path = Some(path.clone());
-                if let Some(file_name) = path.file_name() {
-                    self.picked_path_file_name = file_name.display().to_string();
-                }
+                self.set_file_details(path);
             }
         });
+    }
+
+    fn set_file_details(&mut self, path: &Path) {
+        self.picked_file = Some(path.to_path_buf());
+        self.picked_path_full_path = path.display().to_string();
+        if let Some(file_name) = path.file_name() {
+            self.picked_path_file_name = file_name.display().to_string();
+        }
     }
 
     pub fn show_dock_area(&mut self, ctx: &egui::Context) {
