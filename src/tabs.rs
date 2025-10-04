@@ -57,12 +57,12 @@ impl TabViewer for Tabs {
                 ui.centered_and_justified(|ui| ui.heading("Content"));
             }
             Tab::Console => {
-                ui.vertical(|ui| {
+                ui.with_layout(egui::Layout::bottom_up(egui::Align::default()), |ui| {
                     ui.horizontal(|ui| {
-                        ui.label("Console");
+                        ui.label("Command");
                         ui.add_sized(
                             ui.available_size(),
-                            TextEdit::singleline(&mut String::new())
+                            TextEdit::singleline(&mut String::new()) // TODO: config.console_input
                                 .font(TextStyle::Monospace),
                         );
                     });
