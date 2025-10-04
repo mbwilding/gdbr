@@ -1,4 +1,4 @@
-use egui::{Color32, MenuBar, Slider, ThemePreference, TopBottomPanel};
+use egui::{Color32, MenuBar, Slider, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -103,14 +103,13 @@ impl UiManager {
                 });
 
                 ui.menu_button("Theme", |ui| {
-                    if ui.button("System").clicked() {
-                        ctx.set_theme(ThemePreference::System);
+                    let current_theme = ctx.theme();
+
+                    if ui.selectable_label(current_theme == egui::Theme::Dark, "Dark").clicked() {
+                        ctx.set_theme(egui::Theme::Dark);
                     }
-                    if ui.button("Dark").clicked() {
-                        ctx.set_theme(ThemePreference::Dark);
-                    }
-                    if ui.button("Light").clicked() {
-                        ctx.set_theme(ThemePreference::Light);
+                    if ui.selectable_label(current_theme == egui::Theme::Light, "Light").clicked() {
+                        ctx.set_theme(egui::Theme::Light);
                     }
                 });
 
