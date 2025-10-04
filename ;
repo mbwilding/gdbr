@@ -69,18 +69,12 @@ impl Gdbr {
         cc.egui_ctx.set_fonts(fonts);
 
         if let Some(storage) = cc.storage {
-            let mut app: Gdbr = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-
-            // Setup temps
-            app.zoom_temp = app.zoom;
-
-            app
+            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
         } else {
             Default::default()
         }
     }
 }
-
 impl eframe::App for Gdbr {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
@@ -111,13 +105,18 @@ impl eframe::App for Gdbr {
                             }
                         });
                         ui.horizontal(|ui| {
-                            ui.label("Zoom ");
-
+                            ui.label("Zoom: ");
                             ui.add(Slider::new(&mut self.zoom_temp, 0.5..=3.0));
-
                             if ui.button("Apply").clicked() {
                                 self.zoom = self.zoom_temp;
                             }
+
+                            // if ui.button("-").clicked() {
+                            //     self.zoom -= 0.1;
+                            // }
+                            // if ui.button("+").clicked() {
+                            //     self.zoom += 0.1;
+                            // }
                         });
                     });
                 });
