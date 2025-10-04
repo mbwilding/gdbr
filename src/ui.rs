@@ -1,15 +1,14 @@
+use crate::tabs::{Tab, Tabs};
 use egui::{Color32, MenuBar, RichText, Slider, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::config::Config;
-use crate::tabs::{Tab, Tabs};
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UiManager {
-    config: Config,
     dock_state: DockState<Tab>,
+    #[serde(skip)]
+    tabs: Tabs,
 
     pub zoom: f32,
     #[serde(skip)]
@@ -19,8 +18,8 @@ pub struct UiManager {
 impl Default for UiManager {
     fn default() -> Self {
         Self {
-            config: Default::default(),
             dock_state: Self::setup_dock_layout(),
+            tabs: Tabs::default(),
 
             zoom: 1.0,
             zoom_temp: 1.0,
@@ -129,10 +128,9 @@ impl UiManager {
     }
 
     pub fn show_dock_area(&mut self, ctx: &egui::Context) {
-        let mut tab_viewer = Tabs;
         DockArea::new(&mut self.dock_state)
             .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut tab_viewer);
+            .show(ctx, &mut self.tabs);
     }
 
     pub fn is_tab_visible(&self, tab: &Tab) -> bool {

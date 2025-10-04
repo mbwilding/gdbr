@@ -42,7 +42,10 @@ impl Tab {
     }
 }
 
-pub struct Tabs;
+#[derive(Debug, Default)]
+pub struct Tabs {
+    console_input: String,
+}
 
 impl TabViewer for Tabs {
     type Tab = Tab;
@@ -62,7 +65,7 @@ impl TabViewer for Tabs {
                         ui.label("Command");
                         ui.add_sized(
                             ui.available_size(),
-                            TextEdit::singleline(&mut String::new()) // TODO: config.console_input
+                            TextEdit::singleline(&mut self.console_input)
                                 .font(TextStyle::Monospace),
                         );
                     });
