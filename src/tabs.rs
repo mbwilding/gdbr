@@ -135,7 +135,8 @@ impl TabViewer for Tabs {
                                         ui.available_size(),
                                         TextEdit::multiline(&mut self.logs)
                                             .font(TextStyle::Monospace)
-                                            .interactive(false),
+                                            .interactive(false)
+                                            .frame(false),
                                     );
                                 });
                         },
