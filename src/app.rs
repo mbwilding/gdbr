@@ -1,14 +1,17 @@
-use crate::ui::UiManager;
+use crate::{cli::Cli, ui::UiManager};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Gdbr {
+    #[serde(skip)]
+    cli: Cli,
+
     ui: UiManager,
 }
 
 impl Gdbr {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>, _cli: Option<Cli>) -> Self {
         let mut app = if let Some(storage) = cc.storage {
             eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
         } else {
@@ -33,7 +36,7 @@ impl eframe::App for Gdbr {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_zoom_factor(self.ui.zoom);
-
+        self.ui.update(ctx);
         self.ui.show_menu_bar(ctx);
         self.ui.show_dock_area(ctx);
     }

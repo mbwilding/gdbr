@@ -102,8 +102,7 @@ Log entry 46: Service heartbeat missed, attempting recovery.
 Log entry 47: Recovery process succeeded.
 Log entry 48: Performing log rotation.
 Log entry 49: Old logs archived.
-Log entry 50: Log rotation complete.
-"#,
+Log entry 50: Log rotation complete."#,
             ),
         }
     }

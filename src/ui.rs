@@ -10,6 +10,9 @@ pub struct UiManager {
     #[serde(skip)]
     tabs: Tabs,
 
+    #[serde(skip)]
+    picked_path: Option<String>,
+
     pub zoom: f32,
     #[serde(skip)]
     pub zoom_temp: f32,
@@ -20,6 +23,8 @@ impl Default for UiManager {
         Self {
             dock_state: Self::setup_dock_layout(),
             tabs: Tabs::default(),
+
+            picked_path: None,
 
             zoom: 1.0,
             zoom_temp: 1.0,
@@ -59,6 +64,12 @@ impl UiManager {
         TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
+                    if ui.button("Open Exec").clicked()
+                        && let Some(path) = rfd::FileDialog::new().pick_file()
+                    {
+                        self.picked_path = Some(path.display().to_string());
+                    }
+
                     if ui.button("Quit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
@@ -98,6 +109,10 @@ impl UiManager {
                     }
                 });
 
+                if let Some(picked_path) = &self.picked_path {
+                    ui.label(picked_path);
+                }
+
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if cfg!(debug_assertions) {
                         ui.label(
@@ -123,6 +138,17 @@ impl UiManager {
                     }
                 });
             });
+        });
+    }
+
+    pub fn update(&mut self, ctx: &egui::Context) {
+        ctx.input(|i| {
+            if let Some(file) = i.raw.dropped_files.first()
+                && let Some(path) = &file.path
+                && let Some(file_name) = path.file_name()
+            {
+                self.picked_path = Some(file_name.display().to_string());
+            }
         });
     }
 

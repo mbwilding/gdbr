@@ -3,22 +3,25 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
+    let cli = gdbr::cli::Cli::default();
+
     env_logger::init();
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([400.0, 300.0])
+            .with_inner_size([640.0, 480.0])
             .with_min_inner_size([300.0, 220.0])
             .with_icon(
                 eframe::icon_data::from_png_bytes(&include_bytes!("../assets/icon-256.png")[..])
                     .expect("Failed to load icon"),
-            ),
+            )
+            .with_drag_and_drop(true),
         ..Default::default()
     };
     eframe::run_native(
         "gdbr",
         native_options,
-        Box::new(|cc| Ok(Box::new(gdbr::Gdbr::new(cc)))),
+        Box::new(|cc| Ok(Box::new(gdbr::Gdbr::new(cc, Some(cli))))),
     )
 }
 
@@ -47,7 +50,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(gdbr::Gdbr::new(cc)))),
+                Box::new(|cc| Ok(Box::new(gdbr::Gdbr::new(cc, None)))),
             )
             .await;
 

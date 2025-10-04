@@ -11,6 +11,7 @@ targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [dependencies]
 anyhow = "1.0.100"
+clap = { version = "4.5.48", features = ["derive"] }
 eframe = { version = "0.32.3", default-features = false, features = [
     # "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
@@ -22,6 +23,7 @@ eframe = { version = "0.32.3", default-features = false, features = [
 egui = "0.32.3"
 egui_dock = { version = "0.17.0", features = ["serde"] }
 log = "0.4.28"
+rfd = "0.15.4"
 serde = { version = "1.0.228", features = ["derive"] }
 
 # native:
@@ -31,7 +33,7 @@ env_logger = "0.11.8"
 # web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4.54"
-web-sys = "0.3.81"              # to access the DOM (to hide the loading text)
+web-sys = "0.3.81"  # to access the DOM (to hide the loading text)
 
 [profile.release]
 opt-level = 2 # fast and small wasm
