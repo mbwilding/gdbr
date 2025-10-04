@@ -1,4 +1,4 @@
-use egui::{Color32, MenuBar, Slider, TopBottomPanel};
+use egui::{Color32, MenuBar, RichText, Slider, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -102,18 +102,18 @@ impl UiManager {
                     }
                 });
 
-                ui.menu_button("Theme", |ui| {
-                    let current_theme = ctx.theme();
-
-                    if ui.selectable_label(current_theme == egui::Theme::Dark, "Dark").clicked() {
-                        ctx.set_theme(egui::Theme::Dark);
-                    }
-                    if ui.selectable_label(current_theme == egui::Theme::Light, "Light").clicked() {
-                        ctx.set_theme(egui::Theme::Light);
-                    }
-                });
-
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if cfg!(debug_assertions) {
+                        ui.label(
+                            RichText::new("Debug")
+                                .small()
+                                .color(ui.visuals().warn_fg_color),
+                        )
+                        .on_hover_text("Debug build");
+                    }
+
+                    egui::widgets::global_theme_preference_switch(ui);
+
                     if ui.button("Apply").clicked() {
                         self.zoom = self.zoom_temp;
                     }
