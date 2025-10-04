@@ -1,6 +1,9 @@
-use egui::{CentralPanel, Color32, Frame, MenuBar, TopBottomPanel};
+use crate::tab_viewer::TabViewer;
+use egui::Frame;
+use egui::{CentralPanel, Color32, MenuBar, TopBottomPanel};
 use egui_dock::{DockArea, DockState, NodeIndex, Style};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
@@ -8,7 +11,7 @@ pub struct Gdbr {
     pub dock_state: DockState<String>,
 }
 
-fn reset_dock() -> DockState<String> {
+pub fn reset_dock() -> DockState<String> {
     let mut dock_state = DockState::new(vec!["tab1".to_owned(), "tab2".to_owned()]);
 
     let [left, right] =
@@ -53,7 +56,7 @@ impl Gdbr {
         fonts.font_data.insert(
             "NeoSpleen".to_owned(),
             #[expect(clippy::large_include_file)]
-            std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
+            Arc::new(egui::FontData::from_static(include_bytes!(
                 "../assets/NeoSpleenNerdFont-Regular.ttf"
             ))),
         );
@@ -79,33 +82,6 @@ impl Gdbr {
         }
     }
 }
-
-struct TabViewer {
-    modified: bool,
-}
-
-impl Default for TabViewer {
-    fn default() -> Self {
-        Self { modified: false }
-    }
-}
-
-impl egui_dock::TabViewer for TabViewer {
-    type Tab = String;
-
-    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        (&*tab).into()
-    }
-
-    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        ui.label(format!("Content of {tab}"));
-    }
-
-    fn on_rect_changed(&mut self, _tab: &mut Self::Tab) {
-        self.modified = true
-    }
-}
-
 impl eframe::App for Gdbr {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);

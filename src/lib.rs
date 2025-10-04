@@ -1,6 +1,3 @@
-#![warn(clippy::all, rust_2018_idioms)]
-
-mod app;
-mod gdbr;
-mod structs;
+pub mod app;
+pub mod tab_viewer;
 pub use app::Gdbr;
