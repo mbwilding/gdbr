@@ -1,12 +1,114 @@
 use egui::{
-    CentralPanel, Color32, MenuBar, ScrollArea, Slider, TextEdit, TextStyle, ThemePreference,
-    TopBottomPanel,
+    Color32, MenuBar, ScrollArea, Slider, TextEdit, TextStyle, ThemePreference, TopBottomPanel, Ui,
+    WidgetText,
 };
-use egui::{Frame, SidePanel};
+use egui_dock::{DockArea, DockState, Style, TabViewer};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-pub const NAME: &'static str = "gdbr";
+pub const NAME: &str = "gdbr";
+
+struct Tabs;
+
+impl TabViewer for Tabs {
+    type Tab = Tab;
+
+    fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
+        tab.title().into()
+    }
+
+    fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
+        match tab {
+            Tab::Content => {
+                ui.centered_and_justified(|ui| ui.heading("Content"));
+            }
+            Tab::Console => {
+                ui.vertical(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.label("Console");
+                                ui.add_sized(
+                                    ui.available_size(),
+                                    TextEdit::singleline(&mut String::new())
+                                        .font(TextStyle::Monospace),
+                                );
+                            });
+
+                            ui.separator();
+
+                            ScrollArea::new([true, true])
+                                .auto_shrink(false)
+                                .show(ui, |ui| {
+                                    ui.add_sized(
+                                        ui.available_size(),
+                                        TextEdit::multiline(&mut "Logs...\nMore logs...\nSome other log...\nNew log...\nAnother log".to_owned())
+                                            .font(TextStyle::Monospace),
+                                    );
+                                });
+                        });
+            }
+            Tab::Exe => {
+                ui.centered_and_justified(|ui| ui.heading("Exe"));
+            }
+            Tab::Breakpoints => {
+                ui.centered_and_justified(|ui| ui.heading("Breakpoints"));
+            }
+            Tab::Commands => {
+                ui.centered_and_justified(|ui| ui.heading("Commands"));
+            }
+            Tab::Struct => {
+                ui.centered_and_justified(|ui| ui.heading("Struct"));
+            }
+            Tab::Watch => {
+                ui.centered_and_justified(|ui| ui.heading("Watch"));
+            }
+            Tab::Locals => {
+                ui.centered_and_justified(|ui| ui.heading("Locals"));
+            }
+            Tab::Registers => {
+                ui.centered_and_justified(|ui| ui.heading("Registers"));
+            }
+            Tab::Data => {
+                ui.centered_and_justified(|ui| ui.heading("Data"));
+            }
+        }
+    }
+}
+
+// Tab types for the dock interface
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Tab {
+    Content,
+    Console,
+
+    Exe,
+    Breakpoints,
+    Commands,
+    Struct,
+
+    Watch,
+    Locals,
+    Registers,
+    Data,
+}
+
+impl Tab {
+    fn title(&self) -> &'static str {
+        match self {
+            Self::Content => "Content",
+            Self::Console => "Console",
+
+            Self::Exe => "Exe",
+            Self::Breakpoints => "Breakpoints",
+            Self::Commands => "Commands",
+            Self::Struct => "Struct",
+
+            Self::Watch => "Watch",
+            Self::Locals => "Locals",
+            Self::Registers => "Registers",
+            Self::Data => "Data",
+        }
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
@@ -15,18 +117,35 @@ pub struct Gdbr {
     #[serde(skip)]
     zoom_temp: f32,
     #[serde(skip)]
-    logs: String, // TODO: Vec
+    logs: String, // TODO: vec
     #[serde(skip)]
     console_input: String,
+    #[serde(skip)] // TODO: remove
+    dock_state: DockState<Tab>,
 }
 
 impl Default for Gdbr {
     fn default() -> Self {
+        // Create initial tabs for the dock
+        let initial_tabs = vec![
+            Tab::Content,
+            Tab::Console,
+            Tab::Exe,
+            Tab::Breakpoints,
+            Tab::Commands,
+            Tab::Struct,
+            Tab::Watch,
+            Tab::Locals,
+            Tab::Registers,
+            Tab::Data,
+        ];
+
         Self {
             zoom: 1.0,
             zoom_temp: 1.0,
             logs: "Logs...\nMore logs...\nSome other log...\nNew log...\nAnother log".into(),
             console_input: String::new(),
+            dock_state: DockState::new(initial_tabs),
         }
     }
 }
@@ -69,14 +188,60 @@ impl Gdbr {
         cc.egui_ctx.set_fonts(fonts);
 
         if let Some(storage) = cc.storage {
-            let mut app: Gdbr = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            let mut app: Self = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
 
             // Setup temps
             app.zoom_temp = app.zoom;
 
+            // Initialize dock state if it wasn't loaded from storage
+            if app.dock_state.main_surface().is_empty() {
+                let initial_tabs = vec![
+                    Tab::Content,
+                    Tab::Console,
+                    Tab::Exe,
+                    Tab::Breakpoints,
+                    Tab::Commands,
+                    Tab::Struct,
+                    Tab::Watch,
+                    Tab::Locals,
+                    Tab::Registers,
+                    Tab::Data,
+                ];
+
+                app.dock_state = DockState::new(initial_tabs);
+            }
+
             app
         } else {
             Default::default()
+        }
+    }
+
+    fn show_dock_area(&mut self, ctx: &egui::Context) {
+        self.setup_dock_layout();
+
+        let mut tab_viewer = Tabs;
+        DockArea::new(&mut self.dock_state)
+            .style(Style::from_egui(ctx.style().as_ref()))
+            .show(ctx, &mut tab_viewer);
+    }
+
+    fn setup_dock_layout(&mut self) {
+        if self.dock_state.main_surface().is_empty() {
+            let surface = self.dock_state.main_surface_mut();
+
+            surface.set_focused_node(egui_dock::NodeIndex::root());
+
+            let right_tabs = vec![Tab::Content];
+            let [_old_node, _right_node] =
+                surface.split_right(egui_dock::NodeIndex::root(), 0.3, right_tabs);
+
+            let bottom_tabs = vec![Tab::Watch, Tab::Locals, Tab::Registers, Tab::Data];
+            let [_old_node, bottom_node] =
+                surface.split_below(egui_dock::NodeIndex::root(), 0.4, bottom_tabs);
+
+            let console_tabs = vec![Tab::Console];
+            surface.split_below(bottom_node, 0.3, console_tabs);
         }
     }
 }
@@ -121,65 +286,9 @@ impl eframe::App for Gdbr {
                         });
                     });
                 });
-
-                // ui.add_space(16.0);
             });
         });
 
-        TopBottomPanel::bottom("bottom")
-            .resizable(true)
-            .default_height(350.0)
-            .min_height(100.0)
-            .show(ctx, |ui| {
-                SidePanel::right("right2")
-                    .resizable(true)
-                    .default_width(650.0)
-                    .min_width(100.0)
-                    .show_inside(ui, |ui| {
-                        ui.centered_and_justified(|ui| {
-                            // ui.horizontal(|ui| {
-                            //     ui.selectable_value(lorem_ipsum, true, "Watch");
-                            //     ui.selectable_value(lorem_ipsum, false, "La Pasionaria");
-                            // });
-                            ui.heading("Watch | Locals | Registers | Data")
-                        })
-                    });
-
-                ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Console");
-                        ui.add_sized(
-                            ui.available_size(),
-                            TextEdit::singleline(&mut self.console_input)
-                                .font(TextStyle::Monospace),
-                        );
-                    });
-
-                    ui.separator();
-
-                    ScrollArea::new([true, true])
-                        .auto_shrink(false)
-                        .show(ui, |ui| {
-                            ui.add_sized(
-                                ui.available_size(),
-                                TextEdit::multiline(&mut self.logs).font(TextStyle::Monospace),
-                            );
-                        });
-                });
-            });
-
-        SidePanel::right("right")
-            .resizable(true)
-            .default_width(500.0)
-            .min_width(100.0)
-            .show(ctx, |ui| {
-                ui.centered_and_justified(|ui| ui.heading("Right"))
-            });
-
-        CentralPanel::default()
-            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.0))
-            .show(ctx, |ui| {
-                ui.centered_and_justified(|ui| ui.heading("Center"))
-            });
+        self.show_dock_area(ctx);
     }
 }
