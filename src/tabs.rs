@@ -122,7 +122,28 @@ impl TabViewer for Tabs {
                 ui.centered_and_justified(|ui| ui.heading("Content"));
             }
             Tab::Console => {
-                ui.with_layout(egui::Layout::bottom_up(egui::Align::default()), |ui| {
+                ui.vertical(|ui| {
+                    // Logs area at the top - takes remaining space
+                    ui.allocate_ui_with_layout(
+                        egui::Vec2::new(ui.available_width(), ui.available_height() - 30.0), // Reserve space for input
+                        egui::Layout::top_down(egui::Align::default()),
+                        |ui| {
+                            ScrollArea::new([true, true])
+                                .auto_shrink(false)
+                                .show(ui, |ui| {
+                                    ui.add_sized(
+                                        ui.available_size(),
+                                        TextEdit::multiline(&mut self.logs)
+                                            .font(TextStyle::Monospace)
+                                            .interactive(false),
+                                    );
+                                });
+                        },
+                    );
+
+                    ui.separator();
+
+                    // Command input at the bottom - fixed height
                     ui.horizontal(|ui| {
                         ui.label("Command");
                         ui.add_sized(
@@ -131,17 +152,6 @@ impl TabViewer for Tabs {
                                 .font(TextStyle::Monospace),
                         );
                     });
-
-                    ui.separator();
-
-                    ScrollArea::new([true, true])
-                        .auto_shrink(true)
-                        .show(ui, |ui| {
-                            ui.add_sized(
-                                ui.available_size(),
-                                TextEdit::multiline(&mut self.logs).font(TextStyle::Monospace),
-                            );
-                        });
                 });
             }
             Tab::Exe => {
