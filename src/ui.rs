@@ -102,27 +102,28 @@ impl UiManager {
                     }
                 });
 
-                ui.menu_button("Settings", |ui| {
-                    ui.menu_button("Visuals", |ui| {
-                        ui.menu_button("Themes", |ui| {
-                            if ui.button("System").clicked() {
-                                ctx.set_theme(ThemePreference::System);
-                            }
-                            if ui.button("Dark").clicked() {
-                                ctx.set_theme(ThemePreference::Dark);
-                            }
-                            if ui.button("Light").clicked() {
-                                ctx.set_theme(ThemePreference::Light);
-                            }
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Zoom ");
-                            ui.add(Slider::new(&mut self.zoom_temp, 0.5..=3.0));
-                            if ui.button("Apply").clicked() {
-                                self.zoom = self.zoom_temp;
-                            }
-                        });
-                    });
+                ui.menu_button("Theme", |ui| {
+                    if ui.button("System").clicked() {
+                        ctx.set_theme(ThemePreference::System);
+                    }
+                    if ui.button("Dark").clicked() {
+                        ctx.set_theme(ThemePreference::Dark);
+                    }
+                    if ui.button("Light").clicked() {
+                        ctx.set_theme(ThemePreference::Light);
+                    }
+                });
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("Apply").clicked() {
+                        self.zoom = self.zoom_temp;
+                    }
+                    ui.add(
+                        Slider::new(&mut self.zoom_temp, 0.5..=2.0)
+                            .step_by(0.1)
+                            .fixed_decimals(1)
+                            .text("Zoom"),
+                    );
                 });
             });
         });
