@@ -122,23 +122,14 @@ pub struct Gdbr {
     console_input: String,
     #[serde(skip)] // TODO: remove
     dock_state: DockState<Tab>,
+    #[serde(skip)]
+    layout_initialized: bool,
 }
 
 impl Default for Gdbr {
     fn default() -> Self {
-        // Create initial tabs for the dock
-        let initial_tabs = vec![
-            Tab::Content,
-            Tab::Console,
-            Tab::Exe,
-            Tab::Breakpoints,
-            Tab::Commands,
-            Tab::Struct,
-            Tab::Watch,
-            Tab::Locals,
-            Tab::Registers,
-            Tab::Data,
-        ];
+        // Start with a basic layout - we'll enhance it in setup_dock_layout
+        let initial_tabs = vec![Tab::Watch];
 
         Self {
             zoom: 1.0,
@@ -146,6 +137,7 @@ impl Default for Gdbr {
             logs: "Logs...\nMore logs...\nSome other log...\nNew log...\nAnother log".into(),
             console_input: String::new(),
             dock_state: DockState::new(initial_tabs),
+            layout_initialized: false,
         }
     }
 }
@@ -195,20 +187,8 @@ impl Gdbr {
 
             // Initialize dock state if it wasn't loaded from storage
             if app.dock_state.main_surface().is_empty() {
-                let initial_tabs = vec![
-                    Tab::Content,
-                    Tab::Console,
-                    Tab::Exe,
-                    Tab::Breakpoints,
-                    Tab::Commands,
-                    Tab::Struct,
-                    Tab::Watch,
-                    Tab::Locals,
-                    Tab::Registers,
-                    Tab::Data,
-                ];
-
-                app.dock_state = DockState::new(initial_tabs);
+                app.dock_state = DockState::new(vec![Tab::Watch]);
+                app.layout_initialized = false;
             }
 
             app
@@ -227,21 +207,31 @@ impl Gdbr {
     }
 
     fn setup_dock_layout(&mut self) {
-        if self.dock_state.main_surface().is_empty() {
+        // Only set up the layout once, when the app starts
+        if !self.layout_initialized {
             let surface = self.dock_state.main_surface_mut();
 
-            surface.set_focused_node(egui_dock::NodeIndex::root());
+            // Create a proper split layout:
+            // 1. Split horizontally: left (debug area) and right (content)
+            let content_tabs = vec![Tab::Content];
+            let [_left, right_node] =
+                surface.split_right(egui_dock::NodeIndex::root(), 0.4, content_tabs);
 
-            let right_tabs = vec![Tab::Content];
-            let [_left, _right] =
-                surface.split_right(egui_dock::NodeIndex::root(), 0.3, right_tabs);
+            // 2. Split the left side vertically: top (debug tabs) and bottom (console)
+            let debug_tabs = vec![Tab::Locals, Tab::Registers, Tab::Data];
+            let [_top, bottom_node] =
+                surface.split_below(egui_dock::NodeIndex::root(), 0.7, debug_tabs);
 
-            let bottom_tabs = vec![Tab::Watch, Tab::Locals, Tab::Registers, Tab::Data];
-            let [_, bottom] =
-                surface.split_below(egui_dock::NodeIndex::root(), 0.4, bottom_tabs);
-
+            // 3. Add console at the bottom
             let console_tabs = vec![Tab::Console];
-            surface.split_below(bottom, 0.3, console_tabs);
+            surface.split_below(bottom_node, 0.3, console_tabs);
+
+            // 4. Add additional tabs to the right side
+            let additional_tabs = vec![Tab::Exe, Tab::Breakpoints, Tab::Commands, Tab::Struct];
+            surface.split_below(right_node, 0.5, additional_tabs);
+
+            // Mark layout as initialized so we don't recreate it
+            self.layout_initialized = true;
         }
     }
 }
