@@ -131,7 +131,7 @@ impl UiManager {
 
                     egui::widgets::global_theme_preference_switch(ui);
 
-                    let zoom_response = ui.add(
+                    let response = ui.add(
                         egui::DragValue::new(&mut self.zoom_temp)
                             .update_while_editing(false)
                             .speed(0.1)
@@ -139,7 +139,7 @@ impl UiManager {
                             .prefix("Zoom: "),
                     );
 
-                    if zoom_response.lost_focus() || zoom_response.drag_stopped() {
+                    if response.lost_focus() || zoom_response.drag_stopped() {
                         self.zoom = self.zoom_temp;
                     }
                 });
