@@ -1,23 +1,13 @@
-use crate::tab_viewer::TabViewer;
-use egui::Frame;
 use egui::{CentralPanel, Color32, MenuBar, TopBottomPanel};
-use egui_dock::{DockArea, DockState, Style};
+use egui::{Frame, SidePanel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(default)]
-pub struct Gdbr {
-    pub layout: DockState<String>,
-}
+pub const NAME: &'static str = "gdbr";
 
-impl Default for Gdbr {
-    fn default() -> Self {
-        Self {
-            layout: TabViewer::default_layout(),
-        }
-    }
-}
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Gdbr {}
 
 impl Gdbr {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
@@ -69,14 +59,8 @@ impl eframe::App for Gdbr {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Tabs
-        let mut tab_viewer = TabViewer::default();
-        DockArea::new(&mut self.layout)
-            .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut tab_viewer);
-
         // Top bar
-        TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 let is_web = cfg!(target_arch = "wasm32");
                 if !is_web {
@@ -85,9 +69,6 @@ impl eframe::App for Gdbr {
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         }
                     });
-                    if ui.button("Reset Dock").clicked() {
-                        self.layout = TabViewer::default_layout();
-                    }
                     ui.add_space(16.0);
                 }
 
@@ -95,11 +76,26 @@ impl eframe::App for Gdbr {
             });
         });
 
-        // Central tab viewer
+        TopBottomPanel::bottom("bottom")
+            .resizable(true)
+            .default_height(400.0)
+            .min_height(100.0)
+            .show(ctx, |ui| {
+                ui.centered_and_justified(|ui| ui.heading("Bottom"))
+            });
+
+        SidePanel::right("right")
+            .resizable(true)
+            .default_width(500.0)
+            .min_width(100.0)
+            .show(ctx, |ui| {
+                ui.centered_and_justified(|ui| ui.heading("Right"))
+            });
+
         CentralPanel::default()
             .frame(Frame::central_panel(&ctx.style()).inner_margin(0.0))
             .show(ctx, |ui| {
-                DockArea::new(&mut self.layout).show_inside(ui, &mut tab_viewer);
+                ui.centered_and_justified(|ui| ui.heading("Center"))
             });
     }
 }
