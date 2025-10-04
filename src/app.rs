@@ -1,39 +1,20 @@
 use crate::tab_viewer::TabViewer;
 use egui::Frame;
 use egui::{CentralPanel, Color32, MenuBar, TopBottomPanel};
-use egui_dock::{DockArea, DockState, NodeIndex, Style};
+use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Gdbr {
-    pub dock_state: DockState<String>,
-}
-
-pub fn reset_dock() -> DockState<String> {
-    let mut dock_state = DockState::new(vec!["tab1".to_owned(), "tab2".to_owned()]);
-
-    let [left, right] =
-        dock_state
-            .main_surface_mut()
-            .split_left(NodeIndex::root(), 0.3, vec!["tab3".to_owned()]);
-
-    let [_, _] = dock_state
-        .main_surface_mut()
-        .split_below(left, 0.7, vec!["tab4".to_owned()]);
-
-    let [_, _] = dock_state
-        .main_surface_mut()
-        .split_below(right, 0.5, vec!["tab5".to_owned()]);
-
-    dock_state
+    pub layout: DockState<String>,
 }
 
 impl Default for Gdbr {
     fn default() -> Self {
         Self {
-            dock_state: reset_dock(),
+            layout: TabViewer::default_layout(),
         }
     }
 }
@@ -90,7 +71,7 @@ impl eframe::App for Gdbr {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Tabs
         let mut tab_viewer = TabViewer::default();
-        DockArea::new(&mut self.dock_state)
+        DockArea::new(&mut self.layout)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut tab_viewer);
 
@@ -105,7 +86,7 @@ impl eframe::App for Gdbr {
                         }
                     });
                     if ui.button("Reset Dock").clicked() {
-                        self.dock_state = reset_dock();
+                        self.layout = TabViewer::default_layout();
                     }
                     ui.add_space(16.0);
                 }
@@ -116,9 +97,9 @@ impl eframe::App for Gdbr {
 
         // Central tab viewer
         CentralPanel::default()
-            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.))
+            .frame(Frame::central_panel(&ctx.style()).inner_margin(0.0))
             .show(ctx, |ui| {
-                DockArea::new(&mut self.dock_state).show_inside(ui, &mut tab_viewer);
+                DockArea::new(&mut self.layout).show_inside(ui, &mut tab_viewer);
             });
     }
 }
