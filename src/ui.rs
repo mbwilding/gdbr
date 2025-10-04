@@ -64,10 +64,11 @@ impl UiManager {
         TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
-                    if ui.button("Open Exec").clicked()
+                    if ui.button("Open").clicked()
                         && let Some(path) = rfd::FileDialog::new().pick_file()
+                        && let Some(file_name) = path.file_name()
                     {
-                        self.picked_path = Some(path.display().to_string());
+                        self.picked_path = Some(file_name.display().to_string());
                     }
 
                     if ui.button("Quit").clicked() {
@@ -110,7 +111,9 @@ impl UiManager {
                 });
 
                 if let Some(picked_path) = &self.picked_path {
-                    ui.label(picked_path);
+                    ui.centered_and_justified(|ui| {
+                        ui.monospace(picked_path);
+                    });
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
