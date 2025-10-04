@@ -233,15 +233,15 @@ impl Gdbr {
             surface.set_focused_node(egui_dock::NodeIndex::root());
 
             let right_tabs = vec![Tab::Content];
-            let [_old_node, _right_node] =
+            let [_left, _right] =
                 surface.split_right(egui_dock::NodeIndex::root(), 0.3, right_tabs);
 
             let bottom_tabs = vec![Tab::Watch, Tab::Locals, Tab::Registers, Tab::Data];
-            let [_old_node, bottom_node] =
+            let [_, bottom] =
                 surface.split_below(egui_dock::NodeIndex::root(), 0.4, bottom_tabs);
 
             let console_tabs = vec![Tab::Console];
-            surface.split_below(bottom_node, 0.3, console_tabs);
+            surface.split_below(bottom, 0.3, console_tabs);
         }
     }
 }
