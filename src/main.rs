@@ -1,5 +1,6 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![feature(unix_send_signal)]
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {

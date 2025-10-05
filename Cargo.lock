@@ -1211,6 +1211,7 @@ dependencies = [
  "egui_dock",
  "env_logger",
  "log",
+ "nix",
  "rfd",
  "serde",
  "wasm-bindgen-futures",
