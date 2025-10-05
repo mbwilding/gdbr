@@ -1,3 +1,4 @@
+use crate::gdb::Gdb;
 use crate::tabs::{Tab, Tabs};
 use egui::{Color32, MenuBar, RichText, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
@@ -196,6 +197,37 @@ impl UiManager {
         DockArea::new(&mut self.dock_state)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.tabs);
+    }
+
+    /// Update tabs with GDB output if GDB is available
+    pub fn update_from_gdb(&mut self, gdb: &Gdb) {
+        self.tabs.update_from_gdb(gdb);
+    }
+
+    /// Send a command to GDB through tabs
+    pub fn send_command_to_gdb(
+        &mut self,
+        command: &str,
+        gdb: &Gdb,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.tabs.send_command_to_gdb(command, gdb)
+    }
+
+    /// Process pending commands and send them to GDB
+    pub fn process_pending_commands(
+        &mut self,
+        gdb: &Gdb,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let commands = self.tabs.take_pending_commands();
+        for command in commands {
+            self.send_command_to_gdb(&command, gdb)?;
+        }
+        Ok(())
+    }
+
+    /// Set GDB availability in tabs
+    pub fn set_gdb_available(&mut self, available: bool) {
+        self.tabs.set_gdb_available(available);
     }
 
     pub fn is_tab_visible(&self, tab: &Tab) -> bool {

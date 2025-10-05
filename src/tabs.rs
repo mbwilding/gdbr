@@ -1,3 +1,4 @@
+use crate::gdb::Gdb;
 use egui::{ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
 use egui_dock::TabViewer;
 use serde::{Deserialize, Serialize};
@@ -47,6 +48,54 @@ pub struct Tabs {
     console_input: String,
     console_input_prev: String,
     logs: String,
+    gdb_available: bool,
+    pending_commands: Vec<String>,
+}
+
+impl Tabs {
+    /// Update logs with GDB output
+    pub fn update_from_gdb(&mut self, gdb: &Gdb) {
+        while let Some(output) = gdb.try_receive_output() {
+            self.logs.push_str("(gdb): ");
+            self.logs.push_str(&output);
+            self.logs.push('\n');
+        }
+    }
+
+    /// Send a command to GDB and add it to logs
+    pub fn send_command_to_gdb(
+        &mut self,
+        command: &str,
+        gdb: &Gdb,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.logs.push_str("> ");
+        self.logs.push_str(command);
+        self.logs.push('\n');
+
+        gdb.send_command(command.to_owned())?;
+
+        Ok(())
+    }
+
+    /// Set GDB availability
+    pub fn set_gdb_available(&mut self, available: bool) {
+        self.gdb_available = available;
+    }
+
+    /// Get GDB availability
+    pub fn is_gdb_available(&self) -> bool {
+        self.gdb_available
+    }
+
+    /// Get pending commands and clear the queue
+    pub fn take_pending_commands(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.pending_commands)
+    }
+
+    /// Add a command to the pending queue
+    pub fn add_pending_command(&mut self, command: String) {
+        self.pending_commands.push(command);
+    }
 }
 
 impl TabViewer for Tabs {
@@ -94,13 +143,13 @@ impl TabViewer for Tabs {
                         if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                             response.request_focus();
                             if self.console_input.is_empty() {
-                                // TODO: enter = repeat last
-                                self.logs.push_str(&self.console_input_prev);
-                                self.logs.push('\n');
+                                // Repeat last command
+                                if !self.console_input_prev.is_empty() {
+                                    self.add_pending_command(self.console_input_prev.clone());
+                                }
                             } else {
-                                // TODO: post to gdb instead
-                                self.logs.push_str(&self.console_input);
-                                self.logs.push('\n');
+                                // Add command to pending queue for GDB processing
+                                self.add_pending_command(self.console_input.clone());
                                 if self.console_input_prev != self.console_input {
                                     self.console_input_prev = self.console_input.clone();
                                 }
