@@ -309,6 +309,7 @@ impl TabViewer for Tabs {
                         ui.label("Command");
 
                         // Reserve space for the controls at the end
+                        // TODO: Fix magic so it's dynamic
                         let controls_width = ui.available_width() - 105.0;
                         let response = ui.add_sized(
                             [controls_width, ui.available_height()],
