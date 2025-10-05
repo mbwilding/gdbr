@@ -1,5 +1,5 @@
 use crate::gdb::Gdb;
-use egui::{ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
+use egui::{RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
 use egui_dock::TabViewer;
 use serde::{Deserialize, Serialize};
 
@@ -47,7 +47,7 @@ impl Tab {
 pub struct Tabs {
     console_input: String,
     console_input_prev: String,
-    logs: String,
+    logs: Vec<String>,
     gdb_available: bool,
     pending_commands: Vec<String>,
 }
@@ -56,9 +56,7 @@ impl Tabs {
     /// Update logs with GDB output
     pub fn update_from_gdb(&mut self, gdb: &Gdb) {
         while let Some(output) = gdb.try_receive_output() {
-            // self.logs.push_str("(gdb): ");
-            self.logs.push_str(&output);
-            self.logs.push('\n');
+            self.logs.push(output);
         }
     }
 
@@ -68,9 +66,7 @@ impl Tabs {
         command: &str,
         gdb: &Gdb,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.logs.push_str("> ");
-        self.logs.push_str(command);
-        self.logs.push('\n');
+        self.logs.push(format!("> {command}"));
 
         gdb.send_command(command.to_owned())?;
 
@@ -119,13 +115,9 @@ impl TabViewer for Tabs {
                             ScrollArea::new([true, true])
                                 .auto_shrink(false)
                                 .show(ui, |ui| {
-                                    ui.add_sized(
-                                        ui.available_size(),
-                                        TextEdit::multiline(&mut self.logs)
-                                            .font(TextStyle::Monospace)
-                                            .interactive(false)
-                                            .frame(false),
-                                    );
+                                    for log_entry in &self.logs {
+                                        ui.label(RichText::new(log_entry).monospace());
+                                    }
                                 });
                         },
                     );

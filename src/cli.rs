@@ -18,6 +18,8 @@ pub struct Cli {
 impl Default for Cli {
     fn default() -> Self {
         use clap::Parser as _;
+
+        // println!("{cli:#?}");
         Self::parse()
     }
 }

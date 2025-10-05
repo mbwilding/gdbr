@@ -1,3 +1,5 @@
+use std::{error::Error, path::Path};
+
 use crate::{cli::Cli, gdb::Gdb, ui::UiManager};
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +16,7 @@ pub struct Gdbr {
 }
 
 impl Gdbr {
-    pub fn new(cc: &eframe::CreationContext<'_>, _cli: Option<Cli>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>, cli: Option<Cli>) -> Self {
         let mut app = if let Some(storage) = cc.storage {
             eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
         } else {
@@ -28,14 +30,18 @@ impl Gdbr {
         app.ui.setup_theme(&cc.egui_ctx);
         app.ui.setup_fonts(&cc.egui_ctx);
 
+        if let Some(cli) = cli
+            && let Some(executable) = cli.executable
+        {
+            // This will start the gdb process on first update call
+            app.ui.set_file_details(Path::new(&executable));
+        }
+
         app
     }
 
     /// Spawn a new GDB process for the given file
-    pub fn spawn_gdb(
-        &mut self,
-        file_path: &std::path::Path,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn spawn_gdb(&mut self, file_path: &Path) -> Result<(), Box<dyn Error>> {
         let mut args = self.cli.gdb_args.clone();
         args.push(file_path.to_string_lossy().to_string());
         self.gdb = Some(Gdb::new(args)?);

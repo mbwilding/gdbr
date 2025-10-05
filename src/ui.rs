@@ -169,7 +169,7 @@ impl UiManager {
         });
     }
 
-    fn set_file_details(&mut self, path: &Path) {
+    pub fn set_file_details(&mut self, path: &Path) {
         self.picked_file = Some(path.to_path_buf());
         self.picked_path_full_path = path.display().to_string();
         if let Some(file_name) = path.file_name() {
