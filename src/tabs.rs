@@ -142,7 +142,7 @@ impl TabViewer for Tabs {
                     ui.horizontal(|ui| {
                         ui.label("Command");
                         let response = ui.add_sized(
-                            ui.available_size(),
+                            [ui.available_width() - 100.0, ui.available_height()],
                             TextEdit::singleline(&mut self.console_input)
                                 .font(TextStyle::Monospace),
                         );
