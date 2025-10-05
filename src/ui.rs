@@ -20,6 +20,9 @@ pub struct UiManager {
     #[serde(skip)]
     picked_path_full_path: String,
 
+    #[serde(skip)]
+    file_just_loaded: bool,
+
     pub zoom: f32,
     #[serde(skip)]
     pub zoom_temp: f32,
@@ -34,6 +37,8 @@ impl Default for UiManager {
             picked_file: None,
             picked_path_file_name: String::new(),
             picked_path_full_path: String::new(),
+
+            file_just_loaded: false,
 
             zoom: 1.0,
             zoom_temp: 1.0,
@@ -168,6 +173,22 @@ impl UiManager {
         self.picked_path_full_path = path.display().to_string();
         if let Some(file_name) = path.file_name() {
             self.picked_path_file_name = file_name.display().to_string();
+        }
+        self.file_just_loaded = true;
+    }
+
+    /// Get the currently picked file path
+    pub fn get_picked_file(&self) -> Option<&PathBuf> {
+        self.picked_file.as_ref()
+    }
+
+    /// Check if a file was just loaded and reset the flag
+    pub fn was_file_just_loaded(&mut self) -> bool {
+        if self.file_just_loaded {
+            self.file_just_loaded = false;
+            true
+        } else {
+            false
         }
     }
 
