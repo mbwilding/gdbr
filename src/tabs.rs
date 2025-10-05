@@ -1,5 +1,5 @@
 use crate::gdb::Gdb;
-use egui::{Color32, RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
+use egui::{Color32, Key, RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
 use egui_dock::TabViewer;
 use serde::{Deserialize, Serialize};
 
@@ -307,13 +307,16 @@ impl TabViewer for Tabs {
 
                     ui.horizontal(|ui| {
                         ui.label("Command");
+
+                        // Reserve space for the controls at the end
+                        let controls_width = ui.available_width() - 105.0;
                         let response = ui.add_sized(
-                            [ui.available_width() - 200.0, ui.available_height()],
+                            [controls_width, ui.available_height()],
                             TextEdit::singleline(&mut self.console_input)
                                 .font(TextStyle::Monospace),
                         );
 
-                        if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
                             response.request_focus();
                             if self.console_input.is_empty() {
                                 // Repeat last command
@@ -330,7 +333,7 @@ impl TabViewer for Tabs {
                             }
                         };
 
-                        ui.checkbox(&mut self.scroll_lock, "Scroll Lock");
+                        ui.checkbox(&mut self.scroll_lock, "Scroll");
 
                         if ui.button("Clear").clicked() {
                             self.clear_logs();
