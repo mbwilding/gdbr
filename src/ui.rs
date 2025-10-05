@@ -11,7 +11,6 @@ use std::{
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UiManager {
     dock_state: DockState<Tab>,
-    #[serde(skip)]
     tabs: Tabs,
 
     #[serde(skip)]

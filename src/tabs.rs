@@ -43,14 +43,21 @@ impl Tab {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Tabs {
-    console_input: String,
-    console_input_prev: String,
-    logs: Vec<String>,
-    gdb_available: bool,
-    pending_commands: Vec<String>,
     scroll_lock: bool,
+
+    #[serde(skip)]
+    console_input: String,
+    #[serde(skip)]
+    console_input_prev: String,
+    #[serde(skip)]
+    logs: Vec<String>,
+    #[serde(skip)]
+    gdb_available: bool,
+    #[serde(skip)]
+    pending_commands: Vec<String>,
+    #[serde(skip)]
     last_log_count: usize,
 }
 
@@ -114,23 +121,23 @@ impl TabViewer for Tabs {
                         egui::Vec2::new(ui.available_width(), ui.available_height() - 30.0),
                         egui::Layout::top_down(egui::Align::default()),
                         |ui| {
-                            let mut scroll_area = ScrollArea::new([true, true])
-                                .auto_shrink(false);
-                            
+                            let mut scroll_area = ScrollArea::new([true, true]).auto_shrink(false);
+
                             // Check if we need to auto-scroll
-                            let should_auto_scroll = self.scroll_lock && self.logs.len() > self.last_log_count;
-                            
+                            let should_auto_scroll =
+                                self.scroll_lock && self.logs.len() > self.last_log_count;
+
                             if should_auto_scroll {
                                 // Use a large but finite value instead of INFINITY
                                 scroll_area = scroll_area.vertical_scroll_offset(999999.0);
                             }
-                            
+
                             scroll_area.show(ui, |ui| {
                                 for log_entry in &self.logs {
                                     ui.label(RichText::new(log_entry).monospace());
                                 }
                             });
-                            
+
                             if should_auto_scroll {
                                 self.last_log_count = self.logs.len();
                             }
