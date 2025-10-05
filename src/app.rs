@@ -77,8 +77,11 @@ impl eframe::App for Gdbr {
             let file_path = file_path.clone();
             if let Err(e) = self.spawn_gdb(&file_path) {
                 eprintln!("Failed to spawn GDB: {e}");
+                self.ui.add_error(format!("Failed to spawn GDB: {e}"));
             } else {
                 self.ui.set_gdb_available(true);
+                self.ui
+                    .add_info("GDB process started successfully".to_owned());
             }
         }
 
@@ -87,6 +90,8 @@ impl eframe::App for Gdbr {
 
             if let Err(e) = self.ui.process_pending_commands(gdb) {
                 eprintln!("Failed to process pending commands: {e}");
+                self.ui
+                    .add_error(format!("Failed to process pending commands: {e}"));
             }
         }
     }

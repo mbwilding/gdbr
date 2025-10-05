@@ -3,6 +3,7 @@ use crate::tabs::{Tab, Tabs};
 use egui::{Color32, MenuBar, RichText, TopBottomPanel};
 use egui_dock::{DockArea, DockState, Style};
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
@@ -204,19 +205,12 @@ impl UiManager {
     }
 
     /// Send a command to GDB through tabs
-    pub fn send_command_to_gdb(
-        &mut self,
-        command: &str,
-        gdb: &Gdb,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_command_to_gdb(&mut self, command: &str, gdb: &Gdb) -> Result<(), Box<dyn Error>> {
         self.tabs.send_command_to_gdb(command, gdb)
     }
 
     /// Process pending commands and send them to GDB
-    pub fn process_pending_commands(
-        &mut self,
-        gdb: &Gdb,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn process_pending_commands(&mut self, gdb: &Gdb) -> Result<(), Box<dyn Error>> {
         let commands = self.tabs.take_pending_commands();
         for command in commands {
             self.send_command_to_gdb(&command, gdb)?;
@@ -227,6 +221,26 @@ impl UiManager {
     /// Set GDB availability in tabs
     pub fn set_gdb_available(&mut self, available: bool) {
         self.tabs.set_gdb_available(available);
+    }
+
+    /// Add an info message to the console
+    pub fn add_info(&mut self, message: String) {
+        self.tabs.add_info(message);
+    }
+
+    /// Add an error message to the console
+    pub fn add_error(&mut self, message: String) {
+        self.tabs.add_error(message);
+    }
+
+    /// Add a warning message to the console
+    pub fn add_warning(&mut self, message: String) {
+        self.tabs.add_warning(message);
+    }
+
+    /// Clear all console logs
+    pub fn clear_logs(&mut self) {
+        self.tabs.clear_logs();
     }
 
     pub fn is_tab_visible(&self, tab: &Tab) -> bool {

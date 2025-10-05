@@ -1,7 +1,115 @@
 use crate::gdb::Gdb;
-use egui::{RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
+use egui::{Color32, RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
 use egui_dock::TabViewer;
 use serde::{Deserialize, Serialize};
+
+/// Different types of log entries with associated colors
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+pub enum LogType {
+    /// User command
+    Command,
+    /// GDB output
+    Output,
+    /// Error
+    Error,
+    /// Info
+    Info,
+    /// Warning
+    Warning,
+}
+
+impl LogType {
+    pub fn color(&self, ui: &egui::Ui) -> Color32 {
+        let is_dark = ui.visuals().dark_mode;
+        match self {
+            Self::Command => Color32::from_rgb(100, 150, 255),
+            Self::Output => {
+                if is_dark {
+                    Color32::WHITE
+                } else {
+                    Color32::BLACK
+                }
+            }
+            Self::Error => {
+                if is_dark {
+                    Color32::from_rgb(255, 100, 100)
+                } else {
+                    Color32::from_rgb(200, 50, 50)
+                }
+            }
+            Self::Info => {
+                if is_dark {
+                    Color32::from_rgb(100, 255, 100)
+                } else {
+                    Color32::from_rgb(50, 150, 50)
+                }
+            }
+            Self::Warning => {
+                if is_dark {
+                    Color32::from_rgb(255, 255, 100)
+                } else {
+                    Color32::from_rgb(200, 150, 0)
+                }
+            }
+        }
+    }
+}
+
+/// A log entry with timestamp, content, and type
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LogEntry {
+    pub timestamp: String,
+    pub content: String,
+    pub log_type: LogType,
+}
+
+impl LogEntry {
+    pub fn new(content: String, log_type: LogType) -> Self {
+        let timestamp = chrono::Local::now().format("[%H:%M:%S]").to_string();
+        Self {
+            timestamp,
+            content,
+            log_type,
+        }
+    }
+
+    pub fn new_with_timestamp(content: String, log_type: LogType, timestamp: String) -> Self {
+        Self {
+            timestamp,
+            content,
+            log_type,
+        }
+    }
+
+    pub fn command(content: String) -> Self {
+        Self::new(content, LogType::Command)
+    }
+
+    pub fn output(content: String) -> Self {
+        Self::new(content, LogType::Output)
+    }
+
+    pub fn error(content: String) -> Self {
+        Self::new(content, LogType::Error)
+    }
+
+    pub fn info(content: String) -> Self {
+        Self::new(content, LogType::Info)
+    }
+
+    pub fn warning(content: String) -> Self {
+        Self::new(content, LogType::Warning)
+    }
+
+    /// Format the log entry for display with colors
+    pub fn format_for_display(&self, ui: &egui::Ui) -> RichText {
+        let formatted = format!("{} {}", self.timestamp, self.content);
+
+        RichText::new(formatted)
+            .color(self.log_type.color(ui))
+            .monospace()
+    }
+}
 
 // Tab types for the dock interface
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -52,7 +160,7 @@ pub struct Tabs {
     #[serde(skip)]
     console_input_prev: String,
     #[serde(skip)]
-    logs: Vec<String>,
+    logs: Vec<LogEntry>,
     #[serde(skip)]
     gdb_available: bool,
     #[serde(skip)]
@@ -65,7 +173,18 @@ impl Tabs {
     /// Update logs with GDB output
     pub fn update_from_gdb(&mut self, gdb: &Gdb) {
         while let Some(output) = gdb.try_receive_output() {
-            self.logs.push(output);
+            // Determine log type based on content
+            let log_type = if output.contains("error") || output.contains("Error") {
+                LogType::Error
+            } else if output.contains("warning") || output.contains("Warning") {
+                LogType::Warning
+            } else if output.contains("info") || output.contains("Info") {
+                LogType::Info
+            } else {
+                LogType::Output
+            };
+
+            self.logs.push(LogEntry::new(output, log_type));
         }
     }
 
@@ -75,8 +194,7 @@ impl Tabs {
         command: &str,
         gdb: &Gdb,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let now = chrono::Local::now().format("[%H:%M:%S]");
-        self.logs.push(format!("{now} {command}"));
+        self.logs.push(LogEntry::command(command.to_owned()));
 
         gdb.send_command(command.to_owned())?;
 
@@ -102,6 +220,47 @@ impl Tabs {
     pub fn add_pending_command(&mut self, command: String) {
         self.pending_commands.push(command);
     }
+
+    /// Add a custom log entry
+    pub fn add_log_entry(&mut self, log_entry: LogEntry) {
+        self.logs.push(log_entry);
+    }
+
+    /// Add a log entry with custom timestamp
+    pub fn add_log_with_timestamp(
+        &mut self,
+        content: String,
+        log_type: LogType,
+        timestamp: String,
+    ) {
+        self.logs
+            .push(LogEntry::new_with_timestamp(content, log_type, timestamp));
+    }
+
+    /// Add an info message
+    pub fn add_info(&mut self, message: String) {
+        self.logs.push(LogEntry::info(message));
+    }
+
+    /// Add an error message
+    pub fn add_error(&mut self, message: String) {
+        self.logs.push(LogEntry::error(message));
+    }
+
+    /// Add a warning message
+    pub fn add_warning(&mut self, message: String) {
+        self.logs.push(LogEntry::warning(message));
+    }
+
+    /// Clear all logs
+    pub fn clear_logs(&mut self) {
+        self.logs.clear();
+    }
+
+    /// Get the number of log entries
+    pub fn log_count(&self) -> usize {
+        self.logs.len()
+    }
 }
 
 impl TabViewer for Tabs {
@@ -124,18 +283,17 @@ impl TabViewer for Tabs {
                         |ui| {
                             let mut scroll_area = ScrollArea::new([true, true]).auto_shrink(false);
 
-                            // Check if we need to auto-scroll
                             let should_auto_scroll =
                                 self.scroll_lock && self.logs.len() > self.last_log_count;
 
                             if should_auto_scroll {
-                                // Use a large but finite value instead of INFINITY
+                                // TODO: Fix scroll offset
                                 scroll_area = scroll_area.vertical_scroll_offset(999999.0);
                             }
 
                             scroll_area.show(ui, |ui| {
                                 for log_entry in &self.logs {
-                                    ui.label(RichText::new(log_entry).monospace());
+                                    ui.label(log_entry.format_for_display(ui));
                                 }
                             });
 
@@ -150,7 +308,7 @@ impl TabViewer for Tabs {
                     ui.horizontal(|ui| {
                         ui.label("Command");
                         let response = ui.add_sized(
-                            [ui.available_width() - 100.0, ui.available_height()],
+                            [ui.available_width() - 200.0, ui.available_height()],
                             TextEdit::singleline(&mut self.console_input)
                                 .font(TextStyle::Monospace),
                         );
@@ -173,6 +331,10 @@ impl TabViewer for Tabs {
                         };
 
                         ui.checkbox(&mut self.scroll_lock, "Scroll Lock");
+
+                        if ui.button("Clear").clicked() {
+                            self.clear_logs();
+                        }
                     });
                 });
             }

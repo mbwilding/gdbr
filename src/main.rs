@@ -54,7 +54,6 @@ fn main() {
             )
             .await;
 
-        // Remove the loading text and spinner:
         if let Some(loading_text) = document.get_element_by_id("loading_text") {
             match start_result {
                 Ok(_) => {
