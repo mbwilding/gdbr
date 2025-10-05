@@ -1,4 +1,4 @@
-use crate::{cli::Cli, ui::UiManager};
+use crate::{cli::Cli, gdb::Gdb, ui::UiManager};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -8,6 +8,9 @@ pub struct Gdbr {
     cli: Cli,
 
     ui: UiManager,
+
+    #[serde(skip)]
+    gdb: Option<Gdb>,
 }
 
 impl Gdbr {

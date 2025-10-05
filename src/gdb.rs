@@ -2,9 +2,9 @@ use std::process::{Child, Command, Stdio};
 use std::io::{BufRead, BufReader, Write};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
-use std::os::unix::process::ChildExt;
 
 /// A wrapper around a GDB process
+#[derive(Debug)]
 pub struct Gdb {
     process: Child,
     command_sender: Sender<String>,
@@ -29,7 +29,6 @@ impl Gdb {
         let stdin = process.stdin.take().ok_or("Failed to get stdin")?;
         let stdout = process.stdout.take().ok_or("Failed to get stdout")?;
 
-        let stdin_sender = command_sender.clone();
         thread::spawn(move || {
             let mut stdin = stdin;
             while let Ok(command) = command_receiver.recv() {
@@ -44,7 +43,6 @@ impl Gdb {
             }
         });
 
-        // Spawn a thread to handle output reading
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
             for line in reader.lines() {
