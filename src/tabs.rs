@@ -50,6 +50,8 @@ pub struct Tabs {
     logs: Vec<String>,
     gdb_available: bool,
     pending_commands: Vec<String>,
+    scroll_lock: bool,
+    last_log_count: usize,
 }
 
 impl Tabs {
@@ -112,13 +114,26 @@ impl TabViewer for Tabs {
                         egui::Vec2::new(ui.available_width(), ui.available_height() - 30.0),
                         egui::Layout::top_down(egui::Align::default()),
                         |ui| {
-                            ScrollArea::new([true, true])
-                                .auto_shrink(false)
-                                .show(ui, |ui| {
-                                    for log_entry in &self.logs {
-                                        ui.label(RichText::new(log_entry).monospace());
-                                    }
-                                });
+                            let mut scroll_area = ScrollArea::new([true, true])
+                                .auto_shrink(false);
+                            
+                            // Check if we need to auto-scroll
+                            let should_auto_scroll = self.scroll_lock && self.logs.len() > self.last_log_count;
+                            
+                            if should_auto_scroll {
+                                // Use a large but finite value instead of INFINITY
+                                scroll_area = scroll_area.vertical_scroll_offset(999999.0);
+                            }
+                            
+                            scroll_area.show(ui, |ui| {
+                                for log_entry in &self.logs {
+                                    ui.label(RichText::new(log_entry).monospace());
+                                }
+                            });
+                            
+                            if should_auto_scroll {
+                                self.last_log_count = self.logs.len();
+                            }
                         },
                     );
 
@@ -148,6 +163,8 @@ impl TabViewer for Tabs {
                                 self.console_input.clear();
                             }
                         };
+
+                        ui.checkbox(&mut self.scroll_lock, "Scroll Lock");
                     });
                 });
             }
