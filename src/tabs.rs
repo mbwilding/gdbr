@@ -56,7 +56,7 @@ impl Tabs {
     /// Update logs with GDB output
     pub fn update_from_gdb(&mut self, gdb: &Gdb) {
         while let Some(output) = gdb.try_receive_output() {
-            self.logs.push_str("(gdb): ");
+            // self.logs.push_str("(gdb): ");
             self.logs.push_str(&output);
             self.logs.push('\n');
         }
