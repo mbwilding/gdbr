@@ -1,3 +1,5 @@
+use nix::sys::signal::{self, Signal};
+use std::error::Error;
 use std::io::{BufRead as _, BufReader, Write as _};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -13,7 +15,7 @@ pub struct Gdb {
 
 impl Gdb {
     /// Spawn a new GDB process
-    pub fn new(args: Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(args: Vec<String>) -> Result<Self, Box<dyn Error>> {
         let mut process = Command::new("gdb")
             .args(args)
             .stdin(Stdio::piped())
@@ -67,7 +69,7 @@ impl Gdb {
     }
 
     /// Send a command to the GDB process
-    pub fn send_command(&self, command: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_command(&self, command: String) -> Result<(), Box<dyn Error>> {
         self.command_sender.send(command)?;
         Ok(())
     }
@@ -78,7 +80,7 @@ impl Gdb {
     }
 
     /// Receive output from GDB (blocking)
-    pub fn receive_output(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn receive_output(&self) -> Result<String, Box<dyn Error>> {
         Ok(self.output_receiver.recv()?)
     }
 
@@ -95,28 +97,25 @@ impl Gdb {
     }
 
     /// Send a signal to the GDB process
-    pub fn send_signal(
-        &mut self,
-        signal: nix::sys::signal::Signal,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_signal(&mut self, signal: Signal) -> Result<(), Box<dyn Error>> {
         let pid = self.process.id();
-        nix::sys::signal::kill(nix::unistd::Pid::from_raw(pid as i32), signal)?;
+        signal::kill(nix::unistd::Pid::from_raw(pid as i32), signal)?;
         Ok(())
     }
 
     /// Send SIGINT (interrupt) to the GDB process
-    pub fn send_sigint(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.send_signal(nix::sys::signal::Signal::SIGINT)
+    pub fn send_sigint(&mut self) -> Result<(), Box<dyn Error>> {
+        self.send_signal(Signal::SIGINT)
     }
 
     /// Send SIGTERM to the GDB process
-    pub fn send_sigterm(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.send_signal(nix::sys::signal::Signal::SIGTERM)
+    pub fn send_sigterm(&mut self) -> Result<(), Box<dyn Error>> {
+        self.send_signal(Signal::SIGTERM)
     }
 
     /// Send SIGKILL to the GDB process (force kill)
-    pub fn send_sigkill(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.send_signal(nix::sys::signal::Signal::SIGKILL)
+    pub fn send_sigkill(&mut self) -> Result<(), Box<dyn Error>> {
+        self.send_signal(Signal::SIGKILL)
     }
 }
 
