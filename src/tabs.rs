@@ -75,7 +75,8 @@ impl Tabs {
         command: &str,
         gdb: &Gdb,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.logs.push(format!("> {command}"));
+        let now = chrono::Local::now().format("[%H:%M:%S]");
+        self.logs.push(format!("{now} {command}"));
 
         gdb.send_command(command.to_owned())?;
 
