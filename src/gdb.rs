@@ -1,5 +1,5 @@
+use std::io::{BufRead as _, BufReader, Write as _};
 use std::process::{Child, Command, Stdio};
-use std::io::{BufRead, BufReader, Write};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
@@ -16,7 +16,6 @@ impl Gdb {
     pub fn new(args: Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
         let mut process = Command::new("gdb")
             .args(args)
-            // .arg("--interpreter=mi3")  // Use machine interface for better parsing
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -32,12 +31,12 @@ impl Gdb {
         thread::spawn(move || {
             let mut stdin = stdin;
             while let Ok(command) = command_receiver.recv() {
-                if let Err(e) = writeln!(stdin, "{}", command) {
-                    eprintln!("Failed to send command to GDB: {}", e);
+                if let Err(e) = writeln!(stdin, "{command}") {
+                    eprintln!("Failed to send command to GDB: {e}");
                     break;
                 }
                 if let Err(e) = stdin.flush() {
-                    eprintln!("Failed to flush stdin: {}", e);
+                    eprintln!("Failed to flush stdin: {e}");
                     break;
                 }
             }
@@ -48,19 +47,19 @@ impl Gdb {
             for line in reader.lines() {
                 match line {
                     Ok(line) => {
-                        if let Err(_) = output_sender.send(line) {
+                        if output_sender.send(line).is_err() {
                             break; // Receiver was dropped
                         }
                     }
                     Err(e) => {
-                        eprintln!("Error reading from GDB stdout: {}", e);
+                        eprintln!("Error reading from GDB stdout: {e}");
                         break;
                     }
                 }
             }
         });
 
-        Ok(Gdb {
+        Ok(Self {
             process,
             command_sender,
             output_receiver,
@@ -85,7 +84,9 @@ impl Gdb {
 
     /// Check if the GDB process is still running
     pub fn is_running(&mut self) -> bool {
-        self.process.try_wait().map_or(true, |status| status.is_none())
+        self.process
+            .try_wait()
+            .map_or(true, |status| status.is_none())
     }
 
     /// Get the process ID of the GDB process
@@ -94,7 +95,10 @@ impl Gdb {
     }
 
     /// Send a signal to the GDB process
-    pub fn send_signal(&mut self, signal: nix::sys::signal::Signal) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_signal(
+        &mut self,
+        signal: nix::sys::signal::Signal,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let pid = self.process.id();
         nix::sys::signal::kill(nix::unistd::Pid::from_raw(pid as i32), signal)?;
         Ok(())

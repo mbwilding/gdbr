@@ -65,12 +65,12 @@ impl eframe::App for Gdbr {
         self.ui.show_dock_area(ctx);
 
         // Check if a file was just loaded and spawn GDB if needed
-        if self.ui.was_file_just_loaded() {
-            if let Some(file_path) = self.ui.get_picked_file() {
-                let file_path = file_path.clone();
-                if let Err(e) = self.spawn_gdb(&file_path) {
-                    eprintln!("Failed to spawn GDB: {}", e);
-                }
+        if self.ui.was_file_just_loaded()
+            && let Some(file_path) = self.ui.get_picked_file()
+        {
+            let file_path = file_path.clone();
+            if let Err(e) = self.spawn_gdb(&file_path) {
+                eprintln!("Failed to spawn GDB: {e}");
             }
         }
     }
