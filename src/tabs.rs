@@ -265,35 +265,35 @@ impl Tabs {
 }
 
 fn code_with_line_numbers(ui: &mut Ui, code: &str, language: &str, theme: &CodeTheme) {
-    let desired_size = egui::Vec2::new(ui.available_width(), ui.available_height());
-
-    ui.allocate_ui_with_layout(
-        desired_size,
-        egui::Layout::left_to_right(egui::Align::TOP),
-        |ui| {
-            egui::ScrollArea::both()
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-
-                    egui::Grid::new("code_with_line_numbers_grid")
-                        .striped(true)
-                        .show(ui, |ui| {
-                            for (i, line) in code.lines().enumerate() {
-                                let line_num = format!("{:>3} ", i + 1);
-                                ui.label(RichText::new(line_num).monospace().weak());
-
-                                let highlighted =
-                                    highlight(ui.ctx(), ui.style(), theme, line, language);
-
-                                ui.label(highlighted);
-
-                                ui.end_row();
-                            }
-                        });
-                });
-        },
+    // let desired_size = egui::Vec2::new(ui.available_width(), ui.available_height());
+    //
+    //
+    let code = &format!(
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        code, code, code, code, code, code, code, code, code, code, code
     );
+
+    egui::ScrollArea::both()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            // ui.set_width(ui.available_width());
+
+            egui::Grid::new("code_with_line_numbers_grid")
+                .striped(false)
+                .spacing([0.0, 3.0])
+                .show(ui, |ui| {
+                    for (i, line) in code.lines().enumerate() {
+                        let line_num = format!("{:>3} ", i + 1);
+                        ui.label(RichText::new(line_num).monospace().weak());
+
+                        let highlighted = highlight(ui.ctx(), ui.style(), theme, line, language);
+
+                        ui.label(highlighted);
+
+                        ui.end_row();
+                    }
+                });
+        });
 }
 
 impl TabViewer for Tabs {
