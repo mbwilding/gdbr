@@ -278,18 +278,13 @@ fn code_with_line_numbers(
     theme: &CodeTheme,
     focused_line: Option<usize>,
 ) {
-    // let desired_size = egui::Vec2::new(ui.available_width(), ui.available_height());
-    //
-    //
     let code = &format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        code, code, code, code, code, code, code, code, code, code, code
+        "{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}"
     );
 
     egui::ScrollArea::both()
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            // Row background color for focused line
             let focus_fill = if ui.visuals().dark_mode {
                 Color32::from_rgba_unmultiplied(60, 90, 160, 80)
             } else {
