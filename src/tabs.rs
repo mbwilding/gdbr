@@ -1,5 +1,5 @@
 use crate::gdb::Gdb;
-use egui::{Color32, Key, RichText, ScrollArea, Style, TextEdit, TextStyle, Ui, WidgetText};
+use egui::{Color32, Key, RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
 use egui_dock::TabViewer;
 use egui_extras::syntax_highlighting::{CodeTheme, highlight};
 use serde::{Deserialize, Serialize};
@@ -264,34 +264,36 @@ impl Tabs {
     }
 }
 
-fn code_with_line_numbers(
-    ui: &mut Ui,
-    ctx: &egui::Context,
-    style: &egui::Style,
-    code: &str,
-    language: &str,
-    theme: &CodeTheme,
-) {
-    ui.horizontal(|ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            egui::Grid::new("code_with_line_numbers_grid")
-                .striped(true)
+fn code_with_line_numbers(ui: &mut Ui, code: &str, language: &str, theme: &CodeTheme) {
+    let desired_size = egui::Vec2::new(ui.available_width(), ui.available_height());
+
+    ui.allocate_ui_with_layout(
+        desired_size,
+        egui::Layout::left_to_right(egui::Align::TOP),
+        |ui| {
+            egui::ScrollArea::both()
+                .auto_shrink([false, false])
                 .show(ui, |ui| {
-                    for (i, line) in code.lines().enumerate() {
-                        // Line number column (right-aligned)
-                        let line_num = format!("{:>3} ", i + 1);
-                        ui.label(RichText::new(line_num).monospace().weak());
+                    ui.set_width(ui.available_width());
 
-                        // Syntax highlight this line
-                        let highlighted = highlight(ctx, style, theme, line, language);
+                    egui::Grid::new("code_with_line_numbers_grid")
+                        .striped(true)
+                        .show(ui, |ui| {
+                            for (i, line) in code.lines().enumerate() {
+                                let line_num = format!("{:>3} ", i + 1);
+                                ui.label(RichText::new(line_num).monospace().weak());
 
-                        ui.label(highlighted);
+                                let highlighted =
+                                    highlight(ui.ctx(), ui.style(), theme, line, language);
 
-                        ui.end_row();
-                    }
+                                ui.label(highlighted);
+
+                                ui.end_row();
+                            }
+                        });
                 });
-        });
-    });
+        },
+    );
 }
 
 impl TabViewer for Tabs {
@@ -304,8 +306,7 @@ impl TabViewer for Tabs {
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         match tab {
             Tab::Source => {
-                let ctx = ui.ctx();
-                let style = ui.style().as_ref();
+                // Avoid holding immutable borrows of `ui` across mutable usage
                 let code = r#"#include <stdio.h>
 
 int main(int argc, char **argv) {
@@ -318,7 +319,7 @@ int main(int argc, char **argv) {
                 let language = "c";
                 let theme =
                     &egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx(), ui.style());
-                code_with_line_numbers(ui, ctx, style, code, language, theme);
+                code_with_line_numbers(ui, code, language, theme);
             }
             Tab::Console => {
                 ui.vertical(|ui| {
