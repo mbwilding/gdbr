@@ -300,9 +300,9 @@ fn code_with_line_numbers(
                 let is_focused = focused_line.is_some_and(|ln| ln == i + 1);
 
                 if is_focused {
-                    egui::Frame::new()
+                    egui::Frame::none()
                         .fill(focus_fill)
-                        .inner_margin(egui::Margin::symmetric(0, 1))
+                        .inner_margin(egui::Margin::symmetric(0.0, 1.0))
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 let line_num = format!("{:>3} ", i + 1);
