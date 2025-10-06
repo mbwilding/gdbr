@@ -24,6 +24,7 @@ eframe = { version = "0.32.3", default-features = false, features = [
 ] }
 egui = "0.32.3"
 egui_dock = { version = "0.17.0", features = ["serde"] }
+egui_extras = "0.32.3"
 log = "0.4.28"
 rfd = "0.15.4"
 serde = { version = "1.0.228", features = ["derive"] }

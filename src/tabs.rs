@@ -1,6 +1,7 @@
 use crate::gdb::Gdb;
-use egui::{Color32, Key, RichText, ScrollArea, TextEdit, TextStyle, Ui, WidgetText};
+use egui::{Color32, Key, RichText, ScrollArea, Style, TextEdit, TextStyle, Ui, WidgetText};
 use egui_dock::TabViewer;
+use egui_extras::syntax_highlighting::{CodeTheme, highlight};
 use serde::{Deserialize, Serialize};
 
 /// Different types of log entries with associated colors
@@ -114,7 +115,7 @@ impl LogEntry {
 // Tab types for the dock interface
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Tab {
-    Content,
+    Source,
     Console,
     Exe,
     Breakpoints,
@@ -133,7 +134,7 @@ pub enum Tab {
 impl Tab {
     pub fn title(&self) -> &'static str {
         match self {
-            Self::Content => "Content",
+            Self::Source => "Source",
             Self::Console => "Console",
             Self::Exe => "Exe",
             Self::Breakpoints => "Breakpoints",
@@ -263,6 +264,36 @@ impl Tabs {
     }
 }
 
+fn code_with_line_numbers(
+    ui: &mut Ui,
+    ctx: &egui::Context,
+    style: &egui::Style,
+    code: &str,
+    language: &str,
+    theme: &CodeTheme,
+) {
+    ui.horizontal(|ui| {
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            egui::Grid::new("code_with_line_numbers_grid")
+                .striped(true)
+                .show(ui, |ui| {
+                    for (i, line) in code.lines().enumerate() {
+                        // Line number column (right-aligned)
+                        let line_num = format!("{:>3} ", i + 1);
+                        ui.label(RichText::new(line_num).monospace().weak());
+
+                        // Syntax highlight this line
+                        let highlighted = highlight(ctx, style, theme, line, language);
+
+                        ui.label(highlighted);
+
+                        ui.end_row();
+                    }
+                });
+        });
+    });
+}
+
 impl TabViewer for Tabs {
     type Tab = Tab;
 
@@ -272,8 +303,22 @@ impl TabViewer for Tabs {
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         match tab {
-            Tab::Content => {
-                ui.centered_and_justified(|ui| ui.heading("Content"));
+            Tab::Source => {
+                let ctx = ui.ctx();
+                let style = ui.style().as_ref();
+                let code = r#"#include <stdio.h>
+
+int main(int argc, char **argv) {
+    for (size_t i = 0;; ++i) {
+        printf("%zu\n", i);
+    }
+
+    return 0;
+}"#;
+                let language = "c";
+                let theme =
+                    &egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx(), ui.style());
+                code_with_line_numbers(ui, ctx, style, code, language, theme);
             }
             Tab::Console => {
                 ui.vertical(|ui| {

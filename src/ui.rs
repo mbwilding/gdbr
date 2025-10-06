@@ -92,7 +92,7 @@ impl UiManager {
 
                 ui.menu_button("Windows", |ui| {
                     let tabs = [
-                        Tab::Content,
+                        Tab::Source,
                         Tab::Console,
                         Tab::Exe,
                         Tab::Breakpoints,
@@ -269,7 +269,7 @@ impl UiManager {
     }
 
     fn setup_dock_layout() -> DockState<Tab> {
-        let mut dock_state = DockState::<Tab>::new(vec![Tab::Content]);
+        let mut dock_state = DockState::<Tab>::new(vec![Tab::Source]);
         let surface = dock_state.main_surface_mut();
 
         let [center, bottom_left] =
