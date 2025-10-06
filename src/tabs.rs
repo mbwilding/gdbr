@@ -300,7 +300,7 @@ fn code_with_line_numbers(
                 let is_focused = focused_line.is_some_and(|ln| ln == i + 1);
 
                 if is_focused {
-                    egui::Frame::new()
+                    let response = egui::Frame::new()
                         .fill(focus_fill)
                         .inner_margin(egui::Margin::symmetric(0, 1))
                         .show(ui, |ui| {
@@ -315,17 +315,8 @@ fn code_with_line_numbers(
                         })
                         .response;
 
-                    // Try to keep the focused line in view, centered
-                    let layer_id = ui.layer_id();
-                    // Use the last item's rect for scrolling
-                    if let Some(item_rect) =
-                        ui.memory(|m| m.interaction.current().map(|_| ui.min_rect()))
-                    {
-                        ui.scroll_to_rect(item_rect, Some(egui::Align::Center));
-                    } else {
-                        // Fallback: nudge scroll to current cursor area
-                        ui.scroll_to_cursor(Some(egui::Align::Center));
-                    }
+                    // Keep the focused line in view, centered
+                    ui.scroll_to_rect(response.rect, Some(egui::Align::Center));
                 } else {
                     ui.horizontal(|ui| {
                         let line_num = format!("{:>3} ", i + 1);
@@ -349,7 +340,7 @@ impl TabViewer for Tabs {
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
         match tab {
             Tab::Source => {
-                // Avoid holding immutable borrows of `ui` across mutable usage
+                self.set_focused_line(Some(40));
                 let code = r#"#include <stdio.h>
 
 int main(int argc, char **argv) {
