@@ -278,9 +278,12 @@ fn code_with_line_numbers(
     theme: &CodeTheme,
     focused_line: Option<usize>,
 ) {
-    let code = &format!(
-        "{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}\n{code}"
-    );
+    // HACK: Add more code for testing
+    // let mut sb = String::from(code);
+    // for _ in 0..100 {
+    //     sb.push_str(code);
+    // }
+    // let code = &sb.to_string();
 
     egui::ScrollArea::both()
         .auto_shrink([false, false])
@@ -297,7 +300,6 @@ fn code_with_line_numbers(
                 if is_focused {
                     let response = egui::Frame::new()
                         .fill(focus_fill)
-                        .inner_margin(egui::Margin::symmetric(0, 1))
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 let line_num = format!("{:>3} ", i + 1);
@@ -310,7 +312,6 @@ fn code_with_line_numbers(
                         })
                         .response;
 
-                    // Keep the focused line in view, centered
                     ui.scroll_to_rect(response.rect, Some(egui::Align::Center));
                 } else {
                     ui.horizontal(|ui| {
